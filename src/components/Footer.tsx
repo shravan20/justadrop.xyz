@@ -90,7 +90,7 @@ const Footer = () => {
             <h3 className="font-semibold text-gray-800 mb-4">Contact Us</h3>
             <p className="flex items-center text-gray-600 mb-2">
               <Mail size={16} className="mr-2" />
-              info@justadrop.org
+              contact@justadrop.xyz / shravan@ohmyscript.com
             </p>
             <p className="text-gray-600 mb-4">
               Dakshina Kannada, Mangaluru, Karnataka<br />
