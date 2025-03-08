@@ -33,7 +33,7 @@ const Footer = () => {
               </a>
             </div>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-800 mb-4">For Volunteers</h3>
             <ul className="space-y-2">
@@ -59,7 +59,7 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-800 mb-4">For Organizations</h3>
             <ul className="space-y-2">
@@ -85,7 +85,7 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-800 mb-4">Contact Us</h3>
             <p className="flex items-center text-gray-600 mb-2">
@@ -93,18 +93,18 @@ const Footer = () => {
               info@justadrop.org
             </p>
             <p className="text-gray-600 mb-4">
-              123 Helping Street<br />
-              Kindness City, KC 10101
+              Dakshina Kannada, Mangaluru, Karnataka<br />
+              India, 575002
             </p>
-            <Link 
-              to="/contact" 
+            <Link
+              to="/contact"
               className="inline-block bg-drop-100 text-drop-700 hover:bg-drop-200 px-4 py-2 rounded-md transition"
             >
               Send Message
             </Link>
           </div>
         </div>
-        
+
         <div className="border-t border-gray-200 pt-8 text-center">
           <p className="text-gray-500 text-sm">
             &copy; {new Date().getFullYear()} Just A Drop. All rights reserved.
