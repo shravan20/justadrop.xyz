@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { TEST_ACCOUNTS, isTestAccount, getTestAccountRole, isTestLoginEnabled } from '@/utils/authUtils';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,27 +25,28 @@ const Login = () => {
     try {
       await login(email, password);
       
-      // Get auth state from sessionStorage to determine redirect
-      const { currentSession } = JSON.parse(localStorage.getItem('sb-auth-state') || '{}');
-      const user = currentSession?.user;
-      
-      if (user) {
-        // Get user profile to determine role
-        const response = await fetch(`/api/get_user_profile?id=${user.id}`);
-        const userData = await response.json();
+      // For test accounts, redirect based on role
+      if (isTestAccount(email)) {
+        const role = getTestAccountRole(email);
         
-        if (userData.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (userData.role === 'ngo') {
-          navigate('/organization/dashboard');
+        if (role === 'admin') {
+          toast.success("Logged in as Admin");
+          setTimeout(() => navigate('/admin/dashboard'), 100);
+        } else if (role === 'ngo') {
+          toast.success("Logged in as Organization");
+          setTimeout(() => navigate('/organization/dashboard'), 100);
+        } else if (role === 'volunteer') {
+          toast.success("Logged in as Volunteer");
+          setTimeout(() => navigate('/volunteer/dashboard'), 100);
         } else {
-          navigate('/volunteer/dashboard');
+          toast.success("Login successful");
+          setTimeout(() => navigate('/'), 100);
         }
       } else {
-        navigate('/');
+        // For real users
+        toast.success("Login successful");
+        setTimeout(() => navigate('/'), 100);
       }
-      
-      toast.success("Login successful");
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "Failed to login. Please check your credentials.");
@@ -94,6 +95,16 @@ const Login = () => {
                   required 
                 />
               </div>
+              
+              <div className="pt-2 text-sm text-muted-foreground">
+                <p>Test accounts available:</p>
+                <ul className="list-disc pl-5 space-y-1 mt-1">
+                  {isTestLoginEnabled('admin') && <li>{TEST_ACCOUNTS.ADMIN}</li>}
+                  {isTestLoginEnabled('volunteer') && <li>{TEST_ACCOUNTS.VOLUNTEER}</li>}
+                  {isTestLoginEnabled('ngo') && <li>{TEST_ACCOUNTS.NGO}</li>}
+                  <li><span className="font-medium">Password for all:</span> password</li>
+                </ul>
+              </div>
             </CardContent>
             
             <CardFooter className="flex flex-col space-y-4">
@@ -102,7 +113,12 @@ const Login = () => {
                 className="w-full bg-drop-600 hover:bg-drop-700" 
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : 'Sign in'}
               </Button>
               
               <div className="text-center text-sm">

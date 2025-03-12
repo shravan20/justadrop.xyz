@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Filter, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Filter, X, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,6 +12,11 @@ import {
 import { categoryOptions, typeOptions, urgencyOptions, locationOptions } from '@/data/mockData';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface FilterProps {
   onFilterChange: (filters: FilterValues) => void;
@@ -25,6 +29,8 @@ export interface FilterValues {
   urgency: string[];
   location: string;
   remote: boolean;
+  dateRange: DateRange | undefined;
+  showPastEvents: boolean;
 }
 
 const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
@@ -36,76 +42,145 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
     urgency: [],
     location: '',
     remote: false,
+    dateRange: undefined,
+    showPastEvents: false,
   });
 
+  const activeFilterCount = 
+    (filters.categories?.length || 0) + 
+    (filters.types?.length || 0) + 
+    (filters.urgency?.length || 0) + 
+    (filters.location ? 1 : 0) + 
+    (filters.remote ? 1 : 0) + 
+    (filters.dateRange ? 1 : 0) +
+    (filters.showPastEvents ? 1 : 0);
+
+  useEffect(() => {
+    onFilterChange(filters);
+  }, [filters, onFilterChange]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFilters = { ...filters, search: e.target.value };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    setFilters(prev => ({
+      ...prev,
+      search: e.target.value
+    }));
   };
 
   const handleCategoryChange = (category: string) => {
-    let newCategories: string[];
-    if (filters.categories.includes(category)) {
-      newCategories = filters.categories.filter(c => c !== category);
-    } else {
-      newCategories = [...filters.categories, category];
-    }
-    
-    const newFilters = { ...filters, categories: newCategories };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    setFilters(prev => {
+      const currentCategories = Array.isArray(prev.categories) ? prev.categories : [];
+      
+      if (currentCategories.includes(category)) {
+        return {
+          ...prev,
+          categories: currentCategories.filter(c => c !== category)
+        };
+      } else {
+        return {
+          ...prev,
+          categories: [...currentCategories, category]
+        };
+      }
+    });
   };
 
   const handleTypeChange = (type: string) => {
-    let newTypes: string[];
-    if (filters.types.includes(type)) {
-      newTypes = filters.types.filter(t => t !== type);
-    } else {
-      newTypes = [...filters.types, type];
-    }
-    
-    const newFilters = { ...filters, types: newTypes };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    setFilters(prev => {
+      const currentTypes = Array.isArray(prev.types) ? prev.types : [];
+      
+      if (currentTypes.includes(type)) {
+        return {
+          ...prev,
+          types: currentTypes.filter(t => t !== type)
+        };
+      } else {
+        return {
+          ...prev,
+          types: [...currentTypes, type]
+        };
+      }
+    });
   };
 
   const handleUrgencyChange = (urgency: string) => {
-    let newUrgency: string[];
-    if (filters.urgency.includes(urgency)) {
-      newUrgency = filters.urgency.filter(u => u !== urgency);
-    } else {
-      newUrgency = [...filters.urgency, urgency];
-    }
-    
-    const newFilters = { ...filters, urgency: newUrgency };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    setFilters(prev => {
+      const currentUrgency = Array.isArray(prev.urgency) ? prev.urgency : [];
+      
+      if (currentUrgency.includes(urgency)) {
+        return {
+          ...prev,
+          urgency: currentUrgency.filter(u => u !== urgency)
+        };
+      } else {
+        return {
+          ...prev,
+          urgency: [...currentUrgency, urgency]
+        };
+      }
+    });
   };
 
   const handleLocationChange = (location: string) => {
-    const newFilters = { ...filters, location };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    setFilters(prev => ({
+      ...prev,
+      location
+    }));
   };
 
-  const handleRemoteChange = (checked: boolean) => {
-    const newFilters = { ...filters, remote: checked };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+  const handleRemoteChange = (checked: boolean | string) => {
+    const isRemote = typeof checked === 'string' ? checked === 'true' : !!checked;
+    
+    setFilters(prev => ({
+      ...prev,
+      remote: isRemote
+    }));
+  };
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setFilters(prev => ({
+      ...prev,
+      dateRange: range
+    }));
+  };
+
+  const handlePastEventsChange = (checked: boolean | string) => {
+    const showPast = typeof checked === 'string' ? checked === 'true' : !!checked;
+    
+    setFilters(prev => ({
+      ...prev,
+      showPastEvents: showPast
+    }));
   };
 
   const clearFilters = () => {
-    const newFilters = {
+    setFilters({
       search: '',
       categories: [],
       types: [],
       urgency: [],
       location: '',
       remote: false,
-    };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+      dateRange: undefined,
+      showPastEvents: false,
+    });
+    
+    toast({
+      title: "Filters Cleared",
+      description: "All filters have been cleared"
+    });
+  };
+  
+  const applyFilters = () => {
+    toast({
+      title: "Filters Applied", 
+      description: `${activeFilterCount} filters applied`
+    });
+    
+    setIsOpen(false);
+  };
+
+  const toggleFilterPanel = () => {
+    setIsOpen(prev => !prev);
   };
 
   return (
@@ -114,7 +189,7 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
         <div className="relative flex-grow">
           <Input
             placeholder="Search opportunities..."
-            value={filters.search}
+            value={filters.search || ''}
             onChange={handleSearchChange}
             className="w-full pr-10"
           />
@@ -122,35 +197,27 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2"
+            onClick={toggleFilterPanel}
+            className="flex items-center gap-2 transition-all duration-200 border border-drop-200 hover:bg-drop-100"
+            type="button"
           >
-            <Filter size={16} />
+            <Filter size={16} className="text-drop-600" />
             Filters
-            {(filters.categories.length > 0 || 
-              filters.types.length > 0 || 
-              filters.urgency.length > 0 || 
-              filters.location || 
-              filters.remote) && (
+            {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {activeFilterCount > 0 && (
               <span className="ml-1 w-5 h-5 bg-drop-500 text-white rounded-full text-xs flex items-center justify-center">
-                {filters.categories.length + 
-                  filters.types.length + 
-                  filters.urgency.length + 
-                  (filters.location ? 1 : 0) + 
-                  (filters.remote ? 1 : 0)}
+                {activeFilterCount}
               </span>
             )}
           </Button>
-          {(filters.categories.length > 0 || 
-            filters.types.length > 0 || 
-            filters.urgency.length > 0 || 
-            filters.location || 
-            filters.remote) && (
+          {activeFilterCount > 0 && (
             <Button
               variant="ghost"
               onClick={clearFilters}
               size="icon"
-              className="h-10 w-10"
+              className="h-10 w-10 hover:bg-red-100 hover:text-red-600 transition-colors"
+              title="Clear all filters"
+              type="button"
             >
               <X size={16} />
             </Button>
@@ -159,18 +226,18 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
       </div>
 
       {isOpen && (
-        <div className="mt-4 bg-white p-5 rounded-lg border shadow-sm">
+        <div className="mt-4 bg-white p-5 rounded-lg border shadow-sm animate-in fade-in-50 slide-in-from-top-5 duration-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Categories */}
             <div>
-              <h3 className="font-medium mb-3">Categories</h3>
+              <h3 className="font-medium mb-3 text-drop-800">Categories</h3>
               <div className="space-y-2">
                 {categoryOptions.map((category) => (
                   <div key={category.value} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`category-${category.value}`} 
-                      checked={filters.categories.includes(category.value)}
+                      checked={Array.isArray(filters.categories) && filters.categories.includes(category.value)}
                       onCheckedChange={() => handleCategoryChange(category.value)}
+                      className="text-drop-600 border-drop-300 focus:ring-drop-500"
                     />
                     <Label 
                       htmlFor={`category-${category.value}`}
@@ -183,16 +250,16 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
               </div>
             </div>
             
-            {/* Opportunity Type */}
             <div>
-              <h3 className="font-medium mb-3">Opportunity Type</h3>
+              <h3 className="font-medium mb-3 text-drop-800">Opportunity Type</h3>
               <div className="space-y-2">
                 {typeOptions.map((type) => (
                   <div key={type.value} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`type-${type.value}`} 
-                      checked={filters.types.includes(type.value)}
+                      checked={Array.isArray(filters.types) && filters.types.includes(type.value)}
                       onCheckedChange={() => handleTypeChange(type.value)}
+                      className="text-drop-600 border-drop-300 focus:ring-drop-500"
                     />
                     <Label 
                       htmlFor={`type-${type.value}`}
@@ -205,16 +272,16 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
               </div>
             </div>
             
-            {/* Urgency */}
             <div>
-              <h3 className="font-medium mb-3">Urgency</h3>
+              <h3 className="font-medium mb-3 text-drop-800">Urgency</h3>
               <div className="space-y-2">
                 {urgencyOptions.map((urgency) => (
                   <div key={urgency.value} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`urgency-${urgency.value}`} 
-                      checked={filters.urgency.includes(urgency.value)}
+                      checked={Array.isArray(filters.urgency) && filters.urgency.includes(urgency.value)}
                       onCheckedChange={() => handleUrgencyChange(urgency.value)}
+                      className="text-drop-600 border-drop-300 focus:ring-drop-500"
                     />
                     <Label 
                       htmlFor={`urgency-${urgency.value}`}
@@ -227,11 +294,10 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
               </div>
             </div>
             
-            {/* Location */}
             <div>
-              <h3 className="font-medium mb-3">Location</h3>
+              <h3 className="font-medium mb-3 text-drop-800">Location</h3>
               <Select 
-                value={filters.location} 
+                value={filters.location || ''}
                 onValueChange={handleLocationChange}
               >
                 <SelectTrigger className="w-full">
@@ -250,8 +316,9 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
               <div className="mt-4 flex items-center space-x-2">
                 <Checkbox 
                   id="remote" 
-                  checked={filters.remote}
-                  onCheckedChange={(checked) => handleRemoteChange(checked as boolean)}
+                  checked={!!filters.remote}
+                  onCheckedChange={handleRemoteChange}
+                  className="text-drop-600 border-drop-300 focus:ring-drop-500"
                 />
                 <Label 
                   htmlFor="remote"
@@ -261,6 +328,82 @@ const OpportunitiesFilter: React.FC<FilterProps> = ({ onFilterChange }) => {
                 </Label>
               </div>
             </div>
+          </div>
+          
+          <div className="mt-6 border-t pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3 text-drop-800">Date Range</h3>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      type="button"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {filters.dateRange?.from ? (
+                        filters.dateRange.to ? (
+                          <>
+                            {format(filters.dateRange.from, "LLL dd, yyyy")} -{" "}
+                            {format(filters.dateRange.to, "LLL dd, yyyy")}
+                          </>
+                        ) : (
+                          format(filters.dateRange.from, "LLL dd, yyyy")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={filters.dateRange?.from}
+                      selected={filters.dateRange}
+                      onSelect={handleDateRangeChange}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="flex items-end">
+                <div className="mt-4 flex items-center space-x-2">
+                  <Checkbox 
+                    id="past-events" 
+                    checked={!!filters.showPastEvents}
+                    onCheckedChange={handlePastEventsChange}
+                    className="text-drop-600 border-drop-300 focus:ring-drop-500"
+                  />
+                  <Label 
+                    htmlFor="past-events"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Include past events
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end space-x-2 border-t pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)}
+              className="border-drop-200 text-drop-700 hover:bg-drop-50"
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={applyFilters}
+              className="bg-drop-600 hover:bg-drop-700 text-white"
+              type="button"
+            >
+              Apply Filters
+            </Button>
           </div>
         </div>
       )}
