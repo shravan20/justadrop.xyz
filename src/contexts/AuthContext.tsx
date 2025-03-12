@@ -1,8 +1,10 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { isTestAccount, getTestAccountRole } from '@/utils/authUtils';
+
+const USER_STORAGE_KEY = 'justadrop_user';
 
 type AuthContextType = {
   user: User | null;
@@ -28,16 +30,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for session on initial load
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser.createdAt) {
+          parsedUser.createdAt = new Date(parsedUser.createdAt);
+        }
+        setUser(parsedUser);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem(USER_STORAGE_KEY);
+      }
+    }
+
     const initializeAuth = async () => {
       try {
         setLoading(true);
         
-        // Get session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Get user profile data
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
@@ -46,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
           if (userError) throw userError;
           
-          // Transform to our application's User type
           const appUser: User = {
             id: userData.id,
             name: userData.name,
@@ -68,11 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          // Get user profile data
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
@@ -98,13 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(appUser);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          localStorage.removeItem(USER_STORAGE_KEY);
         }
       }
     );
 
     initializeAuth();
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
@@ -113,6 +131,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      if (isTestAccount(email)) {
+        const role = getTestAccountRole(email);
+        if (!role) throw new Error('Invalid test account');
+        
+        const mockUser: User = {
+          id: `mock-${Date.now()}`,
+          name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+          email: email,
+          role: role,
+          createdAt: new Date(),
+        };
+        
+        setUser(mockUser);
+        return;
+      }
       
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -133,7 +167,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Sign up user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -142,7 +175,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (data.user) {
-        // Create user profile
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -151,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email,
             role,
             created_at: new Date().toISOString(),
-            approved: role === 'volunteer' // Auto-approve volunteers, NGOs need admin approval
+            approved: role === 'volunteer'
           });
         
         if (profileError) throw profileError;
@@ -169,11 +201,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
+      
+      localStorage.removeItem(USER_STORAGE_KEY);
+      
       setUser(null);
+      
+      await supabase.auth.signOut();
+      
       toast.success("Logged out successfully");
     } catch (error: any) {
+      console.error('Logout error:', error);
       toast.error(`Logout failed: ${error.message}`);
+      throw error;
     } finally {
       setLoading(false);
     }

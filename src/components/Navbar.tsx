@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, User, Briefcase, LogOut } from 'lucide-react';
@@ -19,13 +18,25 @@ const Navbar = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      // Force navigation to home page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getDashboardLink = () => {

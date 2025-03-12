@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -128,7 +128,12 @@ const Register = () => {
                 className="w-full bg-drop-600 hover:bg-drop-700" 
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating account...' : 'Create account'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : 'Create account'}
               </Button>
               
               <div className="text-center text-sm">

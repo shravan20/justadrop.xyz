@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 import { Opportunity } from '@/types';
 import { 
   formatDateRange, 
@@ -24,6 +24,9 @@ interface OpportunityCardProps {
 }
 
 const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity }) => {
+  // Check if opportunity is expired
+  const isExpired = opportunity.endDate && new Date() > opportunity.endDate;
+  
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
@@ -38,9 +41,16 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity }) => {
               </Badge>
             </div>
           </div>
-          <Badge variant="outline" className={getUrgencyColor(opportunity.urgency)}>
-            {opportunity.urgency.charAt(0).toUpperCase() + opportunity.urgency.slice(1)} priority
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isExpired && (
+              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+                Expired
+              </Badge>
+            )}
+            <Badge variant="outline" className={getUrgencyColor(opportunity.urgency)}>
+              {opportunity.urgency.charAt(0).toUpperCase() + opportunity.urgency.slice(1)} priority
+            </Badge>
+          </div>
         </div>
         <h3 className="text-lg font-semibold mt-2 line-clamp-2">{opportunity.title}</h3>
         <div className="flex items-center text-sm text-muted-foreground">
@@ -64,7 +74,10 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity }) => {
           {(opportunity.startDate || opportunity.endDate) && (
             <div className="flex items-center text-sm">
               <Calendar size={14} className="mr-2 text-muted-foreground" />
-              <span>{formatDateRange(opportunity.startDate, opportunity.endDate)}</span>
+              <span className={isExpired ? "text-gray-500" : ""}>
+                {formatDateRange(opportunity.startDate, opportunity.endDate)}
+                {isExpired && " (Past)"}
+              </span>
             </div>
           )}
         </div>
@@ -76,8 +89,12 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity }) => {
               See details
             </Link>
           </Button>
-          <Button size="sm" className="bg-drop-600 hover:bg-drop-700">
-            <Link to={`/opportunities/${opportunity.id}`}>
+          <Button 
+            size="sm" 
+            className={isExpired ? "bg-gray-500 hover:bg-gray-600" : "bg-drop-600 hover:bg-drop-700"}
+            asChild
+          >
+            <Link to={`/opportunities/${opportunity.id}?action=${opportunity.type === 'volunteer' ? 'volunteer' : 'donate'}`}>
               {opportunity.type === 'volunteer' ? 'Volunteer' : 'Donate'}
             </Link>
           </Button>

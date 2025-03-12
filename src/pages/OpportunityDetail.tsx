@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { 
@@ -40,6 +41,9 @@ const OpportunityDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const actionParam = searchParams.get('action');
   
   const [showInterestDialog, setShowInterestDialog] = useState(false);
   const [showDonateDialog, setShowDonateDialog] = useState(false);
@@ -52,6 +56,21 @@ const OpportunityDetail = () => {
     queryFn: () => fetchOpportunityById(id!),
     enabled: !!id,
   });
+  
+  // Open the appropriate dialog based on URL parameter
+  useEffect(() => {
+    if (opportunity && actionParam) {
+      if (actionParam === 'volunteer' && opportunity.type === 'volunteer') {
+        setShowInterestDialog(true);
+      } else if (actionParam === 'donate' && opportunity.type === 'donation') {
+        setShowDonateDialog(true);
+      }
+      
+      // Clear the action parameter from the URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [opportunity, actionParam]);
   
   const interestMutation = useMutation({
     mutationFn: () => {
@@ -156,6 +175,9 @@ const OpportunityDetail = () => {
     );
   }
   
+  // Check if opportunity is expired
+  const isExpired = opportunity.endDate && new Date() > opportunity.endDate;
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -184,6 +206,12 @@ const OpportunityDetail = () => {
               <Badge variant="outline">
                 {opportunity.type === 'volunteer' ? 'Volunteer Opportunity' : 'Donation Request'}
               </Badge>
+              
+              {isExpired && (
+                <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+                  Expired
+                </Badge>
+              )}
             </div>
             
             <h1 className="text-3xl font-bold mb-4">{opportunity.title}</h1>
@@ -211,7 +239,10 @@ const OpportunityDetail = () => {
               {(opportunity.startDate || opportunity.endDate) && (
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <span>{formatDateRange(opportunity.startDate, opportunity.endDate)}</span>
+                  <span className={isExpired ? "text-gray-500" : ""}>
+                    {formatDateRange(opportunity.startDate, opportunity.endDate)}
+                    {isExpired && " (Past)"}
+                  </span>
                 </div>
               )}
               
@@ -273,6 +304,7 @@ const OpportunityDetail = () => {
             <div className="bg-white rounded-lg border p-6 sticky top-20">
               <h2 className="text-xl font-semibold mb-6">
                 {opportunity.type === 'volunteer' ? 'Volunteer for This Opportunity' : 'Support This Cause'}
+                {isExpired && <span className="block text-base font-normal text-gray-500 mt-1">(This opportunity has expired)</span>}
               </h2>
               
               {opportunity.type === 'volunteer' ? (
@@ -333,11 +365,12 @@ const OpportunityDetail = () => {
       
       {/* Interest Dialog */}
       <Dialog open={showInterestDialog} onOpenChange={setShowInterestDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Express Interest</DialogTitle>
             <DialogDescription>
               Let the organization know you're interested in this volunteer opportunity.
+              {isExpired && <span className="block font-medium text-amber-600 mt-1">Note: This opportunity has expired, but you can still express interest.</span>}
             </DialogDescription>
           </DialogHeader>
           
@@ -412,11 +445,12 @@ const OpportunityDetail = () => {
       
       {/* Donate Dialog */}
       <Dialog open={showDonateDialog} onOpenChange={setShowDonateDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Donate Items</DialogTitle>
             <DialogDescription>
               Let the organization know you'd like to donate the requested items.
+              {isExpired && <span className="block font-medium text-amber-600 mt-1">Note: This opportunity has expired, but you can still donate items.</span>}
             </DialogDescription>
           </DialogHeader>
           
