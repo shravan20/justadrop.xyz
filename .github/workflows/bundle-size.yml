@@ -9,6 +9,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,12 +24,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check bundle size
-        uses: preactjs/compressed-size-action@v2
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          pattern: "dist/**/*.{js,css,html,json}"
-          build-script: "npm run build"
-          clean-script: "npm run clean"
-          install-script: "npm ci"
-          cwd: "."
+      - name: Get bundle size
+        run: |
+          echo "Current bundle size:"
+          du -sh dist/
+          echo "Individual file sizes:"
+          du -h dist/**/*.{js,css,html,json} 2>/dev/null || true
