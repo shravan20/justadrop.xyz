@@ -27,3 +27,6 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           pattern: "dist/**/*.{js,css,html,json}"
+          build-script: "npm run build"
+          clean-script: "npm run clean"
+          use-package-json-workspace: "false"
