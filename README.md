@@ -1,5 +1,5 @@
 <p align="center">
-  <h2 align="center">justadrop.xyz 🌊 </h2>
+  <h2 align="center">🌊 justadrop.xyz 🌊 </h2>
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
