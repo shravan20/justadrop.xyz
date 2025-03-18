@@ -30,3 +30,4 @@ jobs:
           build-script: "npm run build"
           clean-script: "npm run clean"
           install-script: "npm ci"
+          cwd: "."
