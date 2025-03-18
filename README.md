@@ -1,11 +1,17 @@
 <p align="center">
-  <h2 align="center">justadrop.xyz 🌊 </h2>
+  <h2 align="center">🌊 justadrop.xyz 🌊 </h2>
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.x-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-646CFF)](https://vitejs.dev/)
+[![CI](https://github.com/shravan20/justadrop.xyz/actions/workflows/ci.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/shravan20/justadrop.xyz/actions/workflows/codeql.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/codeql.yml)
+[![Dependency Review](https://github.com/shravan20/justadrop.xyz/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/dependency-review.yml)
+[![Bundle Size](https://github.com/shravan20/justadrop.xyz/actions/workflows/bundle-size.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/bundle-size.yml)
+[![Dead Code Check](https://github.com/shravan20/justadrop.xyz/actions/workflows/dead-code.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/dead-code.yml)
+[![Lighthouse Check](https://github.com/shravan20/justadrop.xyz/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/lighthouse.yml)
 
 Just A Drop is an open-source platform connecting volunteers with NGOs and charitable organizations. Our mission is to facilitate meaningful connections between compassionate individuals and organizations making a difference in their communities.
 
