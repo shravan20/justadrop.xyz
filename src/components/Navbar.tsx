@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Heart, User, Briefcase, LogOut } from 'lucide-react';
+import { Menu, X, User, Briefcase, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -61,9 +61,11 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-drop-500 flex items-center justify-center">
-                <Heart className="w-4 h-4 text-white" />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="Just A Drop Logo" 
+                className="w-8 h-8 rounded-full object-cover"
+              />
               <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-drop-300 animate-ripple opacity-75"></div>
             </div>
             <span className="font-bold text-xl text-drop-700">Just A Drop</span>

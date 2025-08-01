@@ -10,7 +10,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, CheckCircle } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -19,6 +19,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>('volunteer');
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -34,7 +35,12 @@ const Register = () => {
     
     try {
       await register(email, password, name, role);
-      navigate('/login');
+      setRegistrationSuccess(true);
+      
+      // Redirect to login after showing success message for a few seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 4000);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || "Failed to register. Please try again.");
@@ -49,10 +55,48 @@ const Register = () => {
       
       <main className="flex-grow flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Create your account</CardTitle>
-            <CardDescription>Join Just A Drop and start making a difference</CardDescription>
-          </CardHeader>
+          {registrationSuccess ? (
+            // Success State
+            <div className="text-center p-6">
+              <div className="mb-6">
+                <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+                <CardTitle className="text-2xl text-green-700 mb-2">Registration Successful! 🎉</CardTitle>
+                <CardDescription className="text-base">
+                  Welcome to Just A Drop! We're excited to have you join our community.
+                </CardDescription>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <Mail className="mx-auto h-8 w-8 text-blue-500 mb-2" />
+                <h3 className="font-semibold text-blue-800 mb-2">Check Your Email</h3>
+                <p className="text-blue-700 text-sm">
+                  We've sent a verification link to <strong>{email}</strong>. 
+                  Please click the link in your email to verify your account before logging in.
+                </p>
+              </div>
+              
+              <div className="space-y-3 text-sm text-gray-600">
+                <p>📧 Check your inbox (and spam folder)</p>
+                <p>🔗 Click the verification link</p>
+                <p>🚀 Come back and login to get started</p>
+              </div>
+              
+              <div className="mt-6">
+                <p className="text-sm text-gray-500 mb-3">
+                  Redirecting to login page in a few seconds...
+                </p>
+                <Link to="/login" className="text-drop-600 hover:underline font-medium">
+                  Go to Login Now →
+                </Link>
+              </div>
+            </div>
+          ) : (
+            // Registration Form
+            <>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Create your account</CardTitle>
+                <CardDescription>Join Just A Drop and start making a difference</CardDescription>
+              </CardHeader>
           
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
@@ -144,6 +188,8 @@ const Register = () => {
               </div>
             </CardFooter>
           </form>
+            </>
+          )}
         </Card>
       </main>
       

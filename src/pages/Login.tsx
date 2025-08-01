@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,41 +15,74 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [errorMessage, setErrorMessage] = useState('');
+  const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const from = location.state?.from?.pathname || getDefaultRedirect(user.role);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location]);
+
+  const getDefaultRedirect = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'ngo':
+        return '/organization/dashboard';
+      case 'volunteer':
+        return '/volunteer/dashboard';
+      default:
+        return '/';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email.trim() || !password) {
+      setErrorMessage("Please enter both email and password");
+      toast.error("Please enter both email and password");
+      return;
+    }
+
     setIsLoading(true);
+    setErrorMessage(''); // Clear any previous errors
     
     try {
       await login(email, password);
       
-      // For test accounts, redirect based on role
-      if (isTestAccount(email)) {
-        const role = getTestAccountRole(email);
-        
-        if (role === 'admin') {
-          toast.success("Logged in as Admin");
-          setTimeout(() => navigate('/admin/dashboard'), 100);
-        } else if (role === 'ngo') {
-          toast.success("Logged in as Organization");
-          setTimeout(() => navigate('/organization/dashboard'), 100);
-        } else if (role === 'volunteer') {
-          toast.success("Logged in as Volunteer");
-          setTimeout(() => navigate('/volunteer/dashboard'), 100);
-        } else {
-          toast.success("Login successful");
-          setTimeout(() => navigate('/'), 100);
-        }
-      } else {
-        // For real users
-        toast.success("Login successful");
-        setTimeout(() => navigate('/'), 100);
-      }
+      // Note: Redirect will be handled by the useEffect above
+      // after the user state is updated by the AuthContext
+      
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error.message || "Failed to login. Please check your credentials.");
+      
+      // Handle specific error messages
+      let errorMessage = "Failed to login. Please check your credentials.";
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "❌ Invalid email or password. Please try again.";
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "📧 Please check your email and click the verification link before logging in.";
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = "⏰ Too many login attempts. Please wait a moment and try again.";
+      } else if (error.message?.includes('User not found')) {
+        errorMessage = "❌ No account found with this email address.";
+      } else if (error.message?.includes('Wrong password')) {
+        errorMessage = "❌ Incorrect password. Please try again.";
+      } else if (error.message?.includes('Missing Supabase environment variables')) {
+        errorMessage = "⚠️ Application not configured. Please contact support.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setErrorMessage(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +97,11 @@ const Login = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Login to Just A Drop</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
+            {errorMessage && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                {errorMessage}
+              </div>
+            )}
           </CardHeader>
           
           <form onSubmit={handleSubmit}>
@@ -74,7 +112,10 @@ const Login = () => {
                   id="email" 
                   type="email" 
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   placeholder="you@example.com" 
                   required 
                 />
@@ -91,20 +132,25 @@ const Login = () => {
                   id="password" 
                   type="password" 
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   required 
                 />
               </div>
               
-              <div className="pt-2 text-sm text-muted-foreground">
-                <p>Test accounts available:</p>
-                <ul className="list-disc pl-5 space-y-1 mt-1">
-                  {isTestLoginEnabled('admin') && <li>{TEST_ACCOUNTS.ADMIN}</li>}
-                  {isTestLoginEnabled('volunteer') && <li>{TEST_ACCOUNTS.VOLUNTEER}</li>}
-                  {isTestLoginEnabled('ngo') && <li>{TEST_ACCOUNTS.NGO}</li>}
-                  <li><span className="font-medium">Password for all:</span> password</li>
-                </ul>
-              </div>
+              {(isTestLoginEnabled('admin') || isTestLoginEnabled('volunteer') || isTestLoginEnabled('ngo')) && (
+                <div className="pt-2 text-sm text-muted-foreground">
+                  <p>Test accounts available:</p>
+                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                    {isTestLoginEnabled('admin') && <li>{TEST_ACCOUNTS.ADMIN} (Admin)</li>}
+                    {isTestLoginEnabled('volunteer') && <li>{TEST_ACCOUNTS.VOLUNTEER} (Volunteer)</li>}
+                    {isTestLoginEnabled('ngo') && <li>{TEST_ACCOUNTS.NGO} (Organization)</li>}
+                    <li><span className="font-medium">Password for all:</span> password</li>
+                  </ul>
+                </div>
+              )}
             </CardContent>
             
             <CardFooter className="flex flex-col space-y-4">

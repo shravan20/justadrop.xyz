@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Opportunities from "./pages/Opportunities";
@@ -33,6 +33,7 @@ const queryClient = new QueryClient();
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) => {
   const { user, isAuthenticated, loading } = useAuth();
+  const location = useLocation();
   
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -40,8 +41,14 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, all
     </div>;
   }
   
-  if (!isAuthenticated || (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role))) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    // Store the attempted location for redirect after login
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
+    // User is authenticated but doesn't have permission
+    return <Navigate to="/" replace />;
   }
   
   return children;
